@@ -1,3 +1,4 @@
+
 """
 ChromaDB vector store setup and management with LlamaIndex
 """
@@ -37,6 +38,7 @@ class MedicalVectorStore:
         # Set up LlamaIndex settings
         LlamaSettings.embed_model = self.embed_model
         LlamaSettings.llm = self.llm
+        LlamaSettings.chunk_size = 2048
         
         # Initialize ChromaDB
         self.chroma_client = chromadb.PersistentClient(
@@ -49,6 +51,7 @@ class MedicalVectorStore:
         
         self.index = None
         self.query_engine = None
+        self.retriever = None
         
     def create_index(self, documents: List[Dict[str, str]]) -> None:
         """
@@ -90,6 +93,7 @@ class MedicalVectorStore:
                 similarity_top_k=3,
                 response_mode="compact"
             )
+            self.retriever = self.index.as_retriever(similarity_top_k=3)
             
             logger.info("Index created successfully")
             
@@ -121,6 +125,7 @@ class MedicalVectorStore:
                 similarity_top_k=3,
                 response_mode="compact"
             )
+            self.retriever = self.index.as_retriever(similarity_top_k=3)
             
             logger.info("Index loaded successfully")
             return True
@@ -144,7 +149,37 @@ class MedicalVectorStore:
         
         try:
             response = self.query_engine.query(query_text)
-            return str(response)
+            answer = str(response).strip()
+            if answer and answer != "Empty Response":
+                return answer
+
+            # If the LLM doesn't synthesize, fall back to raw retrieval results.
+            nodes = []
+            if self.retriever:
+                nodes = self.retriever.retrieve(query_text)
+            source_nodes = getattr(response, "source_nodes", []) or []
+            if source_nodes:
+                nodes = source_nodes
+
+            if nodes:
+                snippets = []
+                for node in nodes[:3]:
+                    base_node = getattr(node, "node", node)
+                    if hasattr(base_node, "get_content"):
+                        text = base_node.get_content()
+                    else:
+                        text = getattr(base_node, "text", "")
+                    text = text.strip()
+                    if text:
+                        snippets.append(text)
+                if snippets:
+                    combined = "\n\n".join(snippets)
+                    return (
+                        "I could not synthesize a full answer, but here is relevant "
+                        f"information from the knowledge base:\n\n{combined}"
+                    )
+
+            return "I could not find relevant information in the knowledge base."
         except Exception as e:
             logger.error(f"Error querying: {e}")
             raise

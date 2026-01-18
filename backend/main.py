@@ -135,6 +135,12 @@ async def initialize_index(max_samples: Optional[int] = 1000):
     """
     global vector_store
     
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(
+            status_code=400,
+            detail="OPENAI_API_KEY not found. Please set it in your environment."
+        )
+    
     try:
         logger.info(f"Initializing index with max {max_samples} samples...")
         
