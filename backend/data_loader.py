@@ -1,5 +1,5 @@
 """
-Data loader for medical_meadow_wikidoc dataset from HuggingFace
+Data loader for medical datasets from HuggingFace
 """
 import os
 from datasets import load_dataset
@@ -13,9 +13,36 @@ logger = logging.getLogger(__name__)
 class WikidocDataLoader:
     """Load and process medical data from HuggingFace"""
     
-    def __init__(self, dataset_name: str = "medalpaca/medical_meadow_wikidoc"):
-        self.dataset_name = dataset_name
+    def __init__(self, dataset_name: str = None):
+        self.dataset_name = dataset_name or os.getenv(
+            "DATASET_NAME",
+            "lavita/ChatDoctor-HealthCareMagic-100k"
+        )
         self.dataset = None
+
+    def _detect_fields(self, item: Dict[str, str]):
+        candidates = [
+            ("input", "output"),
+            ("instruction", "output"),
+            ("question", "answer"),
+            ("prompt", "response"),
+            ("query", "response"),
+        ]
+        for question_field, answer_field in candidates:
+            if question_field in item and answer_field in item:
+                return question_field, answer_field
+        if "text" in item:
+            return "text", None
+
+        string_fields = [
+            key for key, value in item.items()
+            if isinstance(value, str) and value.strip()
+        ]
+        if string_fields:
+            question_field = string_fields[0]
+            answer_field = string_fields[1] if len(string_fields) > 1 else None
+            return question_field, answer_field
+        return None, None
         
     def load_data(self, split: str = "train", max_samples: int = None) -> List[Dict[str, str]]:
         """
@@ -45,21 +72,33 @@ class WikidocDataLoader:
                     return value
                 return value[:max_len - 3] + "..."
 
+            if len(self.dataset) == 0:
+                return []
+
+            question_field, answer_field = self._detect_fields(self.dataset[0])
+            if not question_field:
+                raise ValueError("Could not detect text fields in dataset items.")
+
             documents = []
             for idx, item in enumerate(self.dataset):
-                # The dataset has 'input' and 'output' fields
-                # Combine them for better context
-                text = f"Question: {item.get('input', '')}\n\nAnswer: {item.get('output', '')}"
-                
-                input_text = item.get('input', '')
-                output_text = item.get('output', '')
+                question_text = item.get(question_field, "")
+                answer_text = item.get(answer_field, "") if answer_field else ""
+
+                if answer_field:
+                    text = f"Question: {question_text}\n\nAnswer: {answer_text}"
+                else:
+                    text = question_text
+
                 documents.append({
                     "text": text,
                     "metadata": {
-                        "source": "wikidoc",
-                        "doc_id": f"wikidoc_{idx}",
-                        "input": _truncate(input_text),
-                        "output": _truncate(output_text)
+                        "source": "huggingface",
+                        "dataset": self.dataset_name,
+                        "doc_id": f"{self.dataset_name}_{idx}",
+                        "question_field": question_field,
+                        "answer_field": answer_field or "",
+                        "question": _truncate(question_text),
+                        "answer": _truncate(answer_text)
                     }
                 })
 
