@@ -8,6 +8,7 @@ from chromadb.config import Settings
 from llama_index.core import VectorStoreIndex, Document, StorageContext, Settings as LlamaSettings
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from typing import List, Dict
 import logging
@@ -22,11 +23,15 @@ class MedicalVectorStore:
     def __init__(self, persist_dir: str = "./chroma_db"):
         self.persist_dir = persist_dir
         self.collection_name = "medical_wikidoc"
-        
-        # Initialize embedding model (using HuggingFace for local embeddings)
-        self.embed_model = HuggingFaceEmbedding(
-            model_name="BAAI/bge-small-en-v1.5"
-        )
+
+        # Choose embedding provider to avoid local model OOM in small containers.
+        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
+        if embedding_provider == "huggingface":
+            model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+            self.embed_model = HuggingFaceEmbedding(model_name=model_name)
+        else:
+            model_name = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+            self.embed_model = OpenAIEmbedding(model=model_name)
         
         # Initialize LLM (OpenAI GPT)
         self.llm = OpenAI(
