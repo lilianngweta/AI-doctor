@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import './App.css'
 
-const API_URL = 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function App() {
   const [messages, setMessages] = useState([])
@@ -46,10 +46,9 @@ function App() {
       }
     } catch (error) {
       console.error('Error checking system status:', error)
-      const port = API_URL.split(':').pop();
       const errorMessage = {
         type: 'error',
-        content: `Could not connect to the backend server. Please make sure it's running on port ${port}.`,
+        content: `Could not connect to the backend server at ${API_URL}.`,
         timestamp: new Date()
       }
       setMessages([errorMessage])
