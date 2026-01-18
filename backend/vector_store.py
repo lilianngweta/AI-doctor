@@ -25,12 +25,12 @@ class MedicalVectorStore:
         self.collection_name = "medical_wikidoc"
 
         # Choose embedding provider to avoid local model OOM in small containers.
-        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
+        embedding_provider = (os.getenv("EMBEDDING_PROVIDER") or "openai").lower()
         if embedding_provider == "huggingface":
-            model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+            model_name = os.getenv("EMBEDDING_MODEL") or "BAAI/bge-small-en-v1.5"
             self.embed_model = HuggingFaceEmbedding(model_name=model_name)
         else:
-            model_name = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+            model_name = os.getenv("EMBEDDING_MODEL") or "text-embedding-3-small"
             self.embed_model = OpenAIEmbedding(model=model_name)
         
         # Initialize LLM (OpenAI GPT)
