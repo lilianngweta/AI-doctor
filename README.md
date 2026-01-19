@@ -4,6 +4,28 @@ An AI-powered wellness application that provides health advice and helps address
 
 ---
 
+# File structure
+
+* `backend/`: Backend (FastAPI-based)
+   * `data_loader.py`: loads data from Hugging Face
+   * `main.py`: main entry point
+   * `requirements.txt`
+   * `vector_store.py`: Converts data into a LlamaIndex vector database
+* `chroma_db`
+   * `chroma.sqlite3`
+* `frontend/`: Frontend (React-based)
+   * `index.html`
+   * `package-lock.json`
+   * `package.json`
+   * `src/`
+      * `App.css`
+      * `App.jsx`
+      * `index.css`
+      * `main.jsx`
+   * `vite.config.js`
+
+---
+
 ## 🚀 Quick Start
 
 **New here?** Start with the [**Getting Started Guide**](GETTING_STARTED.md) for the fastest setup!
