@@ -4,6 +4,11 @@ An AI-powered wellness application that provides health advice and helps address
 
 ---
 
+# Demo
+You can use the app [here](https://ai-doctor-inky.vercel.app/)
+
+---
+
 # File structure
 
 * `backend/`: Backend (FastAPI-based)
