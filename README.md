@@ -322,17 +322,6 @@ npm install
 - Reduce the number of documents loaded
 - Use a machine with more RAM
 
-## 🎯 Roadmap
-
-- [ ] Add conversation history
-- [ ] Support for multiple LLM providers
-- [ ] User authentication
-- [ ] Save favorite responses
-- [ ] Export chat history
-- [ ] Mobile app version
-- [ ] Multi-language support
-
 ---
 
-Made with ❤️ for better health and wellness
-An AI-powered app that provides wellness advice and recommends natural home remedies for various health conditions
+This project was done at [Sundai Club](https://research.sundai.club)
